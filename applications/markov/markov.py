@@ -28,7 +28,7 @@ def markov(words):
     stop_not_found = True
     while stop_not_found:
         next_word = random.choice(dic[next_word])
-        if next_word[-1] in stop_list:
+        if next_word[-1] in stop_list or next_word[-2:-1] in stop_list:
             sentence += ' ' + next_word
             stop_not_found = False
         else:
