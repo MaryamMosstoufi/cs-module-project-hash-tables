@@ -2,6 +2,7 @@ class HashTableEntry:
     """
     Linked List hash table key/value pair
     """
+
     def __init__(self, key, value):
         self.key = key
         self.value = value
@@ -22,7 +23,10 @@ class HashTable:
 
     def __init__(self, capacity):
         # Your code here
-
+        self.capacity = capacity
+        self.size = 0
+        self.buckets = [None] * capacity
+        self.count = 0
 
     def get_num_slots(self):
         """
@@ -35,7 +39,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-
+        return len(self.buckets)
 
     def get_load_factor(self):
         """
@@ -44,7 +48,14 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        load_factor = self.count / self.capacity
 
+        if load_factor > 0.7:
+            new_capacity = self.capacity * 2
+            self.resize(new_capacity)
+        if load_factor < 0.2 and self.capacity > 8:
+            new_capacity = self.capacity//2
+            self.resize(new_capacity)
 
     def fnv1(self, key):
         """
@@ -54,7 +65,22 @@ class HashTable:
         """
 
         # Your code here
+        # 64 bit FNV_prime = 240 + 28 + 0xb3 = 1099511628211
+        FNV_prime = 1099511628211
+        # 64 bit offset_basis = 14695981039346656037
+        offset_basis = 14695981039346656037
 
+        # hash = offset_basis
+        # for each octet_of_data to be hashed
+        #     hash = hash * FNV_prime
+        #     hash = hash xor octet_of_data
+        # return hash
+        hash = offset_basis
+        for char in key:
+            hash = hash * FNV_prime
+            hash = hash ^ ord(char)
+
+        return hash
 
     def djb2(self, key):
         """
@@ -63,15 +89,18 @@ class HashTable:
         Implement this, and/or FNV-1.
         """
         # Your code here
-
+        hash = 5381
+        for char in key:
+            hash = (((hash << 5) + hash) + ord(char)) & 0xFFFFFFFF
+        return hash
 
     def hash_index(self, key):
         """
         Take an arbitrary key and return a valid integer index
         between within the storage capacity of the hash table.
         """
-        #return self.fnv1(key) % self.capacity
-        return self.djb2(key) % self.capacity
+        return self.fnv1(key) % self.capacity
+        # return self.djb2(key) % self.capacity
 
     def put(self, key, value):
         """
@@ -82,7 +111,11 @@ class HashTable:
         Implement this.
         """
         # Your code here
-
+        hash_index = self.hash_index(key)
+        node = HashTableEntry(key, value)
+        node.next = self.buckets[hash_index]
+        self.buckets[hash_index] = node
+        self.count += 1
 
     def delete(self, key):
         """
@@ -93,7 +126,20 @@ class HashTable:
         Implement this.
         """
         # Your code here
-
+        hash_index = self.hash_index(key)
+        cur = self.buckets[hash_index]
+        prev = None
+        while cur.key != key and cur is not None:
+            prev = cur
+            cur = cur.next
+        if cur is None:
+            print("Warning: key not found")
+        elif prev is None:
+            self.buckets[hash_index] = cur.next
+            self.count -= 1
+        else:
+            prev.next = cur.next
+            self.count -= 1
 
     def get(self, key):
         """
@@ -104,7 +150,12 @@ class HashTable:
         Implement this.
         """
         # Your code here
-
+        hash_index = self.hash_index(key)
+        cur = self.buckets[hash_index]
+        while cur is not None:
+            if cur.key == key:
+                return cur.value
+            cur = cur.next
 
     def resize(self, new_capacity):
         """
@@ -114,7 +165,14 @@ class HashTable:
         Implement this.
         """
         # Your code here
-
+        prev_buckets = self.buckets
+        self.capacity = new_capacity
+        self.buckets = [None] * self.capacity
+        self.count = 0
+        for each in prev_buckets:
+            while each is not None:
+                self.put(each.key, each.value)
+                each = each.next
 
 
 if __name__ == "__main__":
